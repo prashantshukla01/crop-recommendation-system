@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crop Recommendation System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>🌱 Smart Crop Recommendation System</h1>
+        <p>Enter your location to get personalized crop recommendations based on local climate and soil conditions</p>
+
+        <div class="input-section">
+            <input type="text" id="location" placeholder="Enter city, state, or coordinates..." />
+            <button onclick="getRecommendation()">Get Recommendation</button>
+            <button onclick="getCurrentLocation()">Use Current Location</button>
+        </div>
+
+        <div id="loading" class="hidden">
+            <div class="spinner"></div>
+            <p>Analyzing local conditions...</p>
+        </div>
+
+        <div id="result" class="hidden">
+            <h2>Recommendation for <span id="result-location"></span></h2>
+
+            <div class="result-card">
+                <h3>🌾 Recommended Crop: <span id="crop-name"></span></h3>
+                <p>Confidence: <span id="confidence"></span></p>
+            </div>
+
+            <div class="data-section">
+                <div class="data-card">
+                    <h4>🌤️ Weather Conditions</h4>
+                    <p>Temperature: <span id="weather-temp"></span></p>
+                    <p>Rainfall: <span id="weather-rain"></span></p>
+                    <p>Humidity: <span id="weather-humidity"></span></p>
+                </div>
+
+                <div class="data-card">
+                    <h4>🌱 Soil Analysis</h4>
+                    <p>pH: <span id="soil-ph"></span></p>
+                    <p>Sand: <span id="soil-sand"></span>%</p>
+                    <p>Silt: <span id="soil-silt"></span>%</p>
+                    <p>Clay: <span id="soil-clay"></span>%</p>
+                </div>
+
+                <div class="data-card">
+                    <h4>🧪 Predicted Soil Nutrients</h4>
+                    <p>Nitrogen (N): <span id="npk-n"></span></p>
+                    <p>Phosphorus (P): <span id="npk-p"></span></p>
+                    <p>Potassium (K): <span id="npk-k"></span></p>
+                </div>
+            </div>
+        </div>
+
+        <div id="error" class="hidden error-message">
+            <p></p>
+        </div>
+    </div>
+
+    <script>
+        function getCurrentLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    position => {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        document.getElementById('location').value = `${lat},${lng}`;
+                        getRecommendation();
+                    },
+                    error => {
+                        alert('Could not get your location. Please enter it manually.');
+                    }
+                );
+            } else {
+                alert('Geolocation is not supported by your browser.');
+            }
+        }
+
+        async function getRecommendation() {
+            const location = document.getElementById('location').value;
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            const error = document.getElementById('error');
+
+            if (!location) {
+                showError('Please enter a location');
+                return;
+            }
+
+            // Show loading, hide previous results
+            loading.classList.remove('hidden');
+            result.classList.add('hidden');
+            error.classList.add('hidden');
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `location=${encodeURIComponent(location)}`
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    showError(data.error);
+                } else {
+                    displayResult(data);
+                }
+
+            } catch (err) {
+                showError('Network error. Please try again.');
+            } finally {
+                loading.classList.add('hidden');
+            }
+        }
+
+        function displayResult(data) {
+            document.getElementById('result-location').textContent = data.location;
+            document.getElementById('crop-name').textContent = data.recommended_crop;
+            document.getElementById('confidence').textContent = data.confidence;
+
+            // Weather data
+            document.getElementById('weather-temp').textContent = data.weather_data.temperature;
+            document.getElementById('weather-rain').textContent = data.weather_data.rainfall;
+            document.getElementById('weather-humidity').textContent = data.weather_data.humidity;
+
+            // Soil data
+            document.getElementById('soil-ph').textContent = data.soil_data.ph || 'N/A';
+            document.getElementById('soil-sand').textContent = data.soil_data.sand || 'N/A';
+            document.getElementById('soil-silt').textContent = data.soil_data.silt || 'N/A';
+            document.getElementById('soil-clay').textContent = data.soil_data.clay || 'N/A';
+
+            // NPK data
+            document.getElementById('npk-n').textContent = data.predicted_npk.N;
+            document.getElementById('npk-p').textContent = data.predicted_npk.P;
+            document.getElementById('npk-k').textContent = data.predicted_npk.K;
+
+            document.getElementById('result').classList.remove('hidden');
+        }
+
+        function showError(message) {
+            const error = document.getElementById('error');
+            error.querySelector('p').textContent = message;
+            error.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
