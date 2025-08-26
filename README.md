@@ -32,17 +32,26 @@ crop-recommendation-system/
 
 ## 📊 How It Works
 
-Input Location: User enters location or uses GPS
-Data Fetching: Gets historical weather and soil data from APIs
-NPK Prediction: ML model predicts soil nutrient levels
-Crop Recommendation: Second ML model suggests optimal crops
-Results Display: Shows detailed analysis with confidence scores
+**Input Location**: User enters location or uses GPS
+
+**Data Fetching**: Gets historical weather and soil data from APIs
+
+**NPK Prediction**: ML model predicts soil nutrient levels
+
+**Crop Recommendation**: Second ML model suggests optimal crops
+
+**Results Display**: Shows detailed analysis with confidence scores
+
 🌐 Usage Examples
 
 "Bangalore, India"
+
 "12.9716, 77.5946"
+
 "New York, USA"
+
 "London, UK"
+
 The system handles both precise coordinates and city names, with fallback to simulated data when APIs are unavailable.
 
 Perfect for farmers, agricultural students, and gardening enthusiasts! 🌾
