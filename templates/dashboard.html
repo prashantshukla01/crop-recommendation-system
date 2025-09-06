@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌱 Dashboard - Soil Analysis</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="dashboard-body">
+    <!-- Navigation -->
+    <nav class="dashboard-nav">
+        <div class="nav-brand">
+            <i class="fas fa-seedling"></i>
+            <span>Soil Analysis Pro</span>
+        </div>
+        <div class="nav-links">
+            <a href="/" class="nav-link">
+                <i class="fas fa-home"></i> Home
+            </a>
+            <a href="/dashboard" class="nav-link active">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+            <a href="/profile" class="nav-link">
+                <i class="fas fa-user"></i> Profile
+            </a>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="user-card">
+                <div class="user-avatar">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="user-info">
+                    <h3>{{ user.full_name or user.username }}</h3>
+                    <p class="user-email">{{ user.email }}</p>
+                    <p class="user-bio">{{ user.bio or 'Agricultural enthusiast' }}</p>
+                </div>
+            </div>
+
+            <div class="quick-stats">
+                <h4><i class="fas fa-chart-bar"></i> Quick Stats</h4>
+                <div class="stat-item">
+                    <div class="stat-number">{{ stats.total_analyses }}</div>
+                    <div class="stat-label">Total Analyses</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">{{ stats.unique_locations }}</div>
+                    <div class="stat-label">Locations</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">{{ stats.most_recommended_crop|title }}</div>
+                    <div class="stat-label">Top Crop</div>
+                </div>
+            </div>
+
+            <div class="quick-actions">
+                <h4><i class="fas fa-bolt"></i> Quick Actions</h4>
+                <a href="/" class="action-btn">
+                    <i class="fas fa-plus"></i> New Analysis
+                </a>
+                <button onclick="exportData()" class="action-btn">
+                    <i class="fas fa-download"></i> Export Data
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon climate">
+                        <i class="fas fa-map-marked-alt"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ stats.total_analyses }}</div>
+                        <div class="stat-title">Total Analyses</div>
+                        <div class="stat-change">+12% this month</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon soil">
+                        <i class="fas fa-globe"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ stats.unique_locations }}</div>
+                        <div class="stat-title">Unique Locations</div>
+                        <div class="stat-change">{{ stats.unique_locations }} countries</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon nutrients">
+                        <i class="fas fa-medal"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ stats.most_recommended_crop|title }}</div>
+                        <div class="stat-title">Most Recommended</div>
+                        <div class="stat-change">Best for your regions</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon success">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">{% if stats.last_analysis %}{{ stats.last_analysis.split()[0] }}{% else %}Never{% endif %}</div>
+                        <div class="stat-title">Last Analysis</div>
+                        <div class="stat-change">Keep analyzing!</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Map Section -->
+            <div class="map-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-map"></i> Analysis Locations Map</h2>
+                    <div class="map-controls">
+                        <button class="map-btn" onclick="toggleMapStyle()">
+                            <i class="fas fa-layer-group"></i> Map Style
+                        </button>
+                        <button class="map-btn" onclick="fitToMarkers()">
+                            <i class="fas fa-expand"></i> Fit All
+                        </button>
+                    </div>
+                </div>
+                <div id="map" class="map-container"></div>
+                <div class="map-legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #4CAF50;"></div>
+                        <span>High Confidence (>70%)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #FF9800;"></div>
+                        <span>Medium Confidence (40-70%)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #f44336;"></div>
+                        <span>Low Confidence (<40%)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analysis History -->
+            <div class="history-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-history"></i> Recent Analysis History</h2>
+                    <button class="view-all-btn" onclick="toggleHistoryView()">
+                        <i class="fas fa-list"></i> View All
+                    </button>
+                </div>
+
+                <div class="analysis-timeline">
+                    {% for analysis in analyses %}
+                    <div class="timeline-item" onclick="showAnalysisDetails({{ analysis.id }})">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-header">
+                                <h4>{{ analysis.location_name }}</h4>
+                                <span class="timeline-date">{{ analysis.created_at.split()[0] }}</span>
+                            </div>
+                            <div class="timeline-details">
+                                <span class="crop-recommendation">
+                                    <i class="fas fa-seedling"></i>
+                                    {{ analysis.primary_crop|title }}
+                                </span>
+                                <span class="confidence-badge confidence-{{ 'high' if analysis.confidence > 70 else 'medium' if analysis.confidence > 40 else 'low' }}">
+                                    {{ analysis.confidence }}% confidence
+                                </span>
+                            </div>
+                            <div class="location-coords">
+                                <i class="fas fa-map-marker"></i>
+                                {{ "%.4f"|format(analysis.latitude) }}, {{ "%.4f"|format(analysis.longitude) }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    {% if not analyses %}
+                    <div class="empty-state">
+                        <i class="fas fa-seedling"></i>
+                        <h3>No analyses yet</h3>
+                        <p>Start analyzing soil conditions to see your history here</p>
+                        <a href="/" class="cta-btn">Analyze First Location</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Analysis Details Modal -->
+    <div id="analysisModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Analysis Details</h3>
+                <button onclick="closeModal()" class="close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="modalBody" class="modal-body">
+                <!-- Dynamic content loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Google Maps API -->
+    <script async defer 
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDGfKF_wgzCh1O2WQeCgEZHUoqLlgD4YJE&callback=initMap"
+        onerror="handleMapsError()">
+    </script>
+
+    <script>
+        // Global variables
+        let map;
+        let markers = [];
+        let currentMapStyle = 'terrain';
+        const mapStyles = ['terrain', 'satellite', 'hybrid', 'roadmap'];
+
+        // Analysis locations data
+        const analysisLocations = {{ locations|tojson|safe }};
+
+        // Handle Google Maps API error
+        function handleMapsError() {
+            console.error('Google Maps API failed to load');
+            const mapContainer = document.getElementById('map');
+            mapContainer.innerHTML = `
+                <div class="map-error">
+                    <div class="error-content">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h3>Map Unavailable</h3>
+                        <p>Google Maps API key is required to display the interactive map.</p>
+                        <p>Please add your Google Maps API key to enable this feature.</p>
+                        <div class="locations-list">
+                            <h4>Analyzed Locations:</h4>
+                            ${analysisLocations.map(loc => 
+                                `<div class="location-item">
+                                    <strong>${loc.location_name}</strong> - ${loc.primary_crop} (${loc.confidence}%)
+                                </div>`
+                            ).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Initialize Google Map
+        function initMap() {
+            const defaultCenter = { lat: 20.5937, lng: 78.9629 }; // India center
+            
+            try {
+                map = new google.maps.Map(document.getElementById('map'), {
+                    zoom: 5,
+                    center: defaultCenter,
+                    mapTypeId: google.maps.MapTypeId.TERRAIN,
+                    styles: getMapStyleConfig('terrain')
+                });
+
+                // Add markers for each analysis location
+                analysisLocations.forEach(location => {
+                    addAnalysisMarker(location);
+                });
+
+                // Fit map to show all markers
+                if (markers.length > 0) {
+                    fitToMarkers();
+                }
+            } catch (error) {
+                console.error('Error initializing map:', error);
+                handleMapsError();
+            }
+        }
+
+        function addAnalysisMarker(location) {
+            const position = { lat: location.latitude, lng: location.longitude };
+            
+            // Choose marker color based on confidence
+            let markerColor = '#f44336'; // Low confidence - red
+            if (location.confidence > 70) markerColor = '#4CAF50'; // High confidence - green
+            else if (location.confidence > 40) markerColor = '#FF9800'; // Medium confidence - orange
+
+            const marker = new google.maps.Marker({
+                position: position,
+                map: map,
+                title: location.location_name,
+                icon: {
+                    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(createMarkerSVG(markerColor))}`,
+                    scaledSize: new google.maps.Size(40, 40),
+                    anchor: new google.maps.Point(20, 40)
+                }
+            });
+
+            const infoWindow = new google.maps.InfoWindow({
+                content: createInfoWindowContent(location)
+            });
+
+            marker.addListener('click', () => {
+                // Close other info windows
+                markers.forEach(m => m.infoWindow && m.infoWindow.close());
+                infoWindow.open(map, marker);
+            });
+
+            marker.infoWindow = infoWindow;
+            markers.push(marker);
+        }
+
+        function createMarkerSVG(color) {
+            return `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24">
+                <path fill="${color}" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                <circle fill="white" cx="12" cy="9" r="1.5"/>
+            </svg>`;
+        }
+
+        function createInfoWindowContent(location) {
+            const date = new Date(location.created_at).toLocaleDateString();
+            return `
+                <div class="info-window">
+                    <h4>${location.location_name}</h4>
+                    <p><strong>Crop:</strong> ${location.primary_crop}</p>
+                    <p><strong>Confidence:</strong> ${location.confidence}%</p>
+                    <p><strong>Date:</strong> ${date}</p>
+                    <button onclick="showAnalysisDetails(${location.id})" class="info-btn">
+                        View Details
+                    </button>
+                </div>
+            `;
+        }
+
+        function getMapStyleConfig(style) {
+            const styles = {
+                terrain: [],
+                satellite: [],
+                hybrid: [],
+                roadmap: [
+                    {
+                        featureType: 'all',
+                        elementType: 'geometry.fill',
+                        stylers: [{ color: '#f5f5f5' }]
+                    }
+                ]
+            };
+            return styles[style] || [];
+        }
+
+        function toggleMapStyle() {
+            const currentIndex = mapStyles.indexOf(currentMapStyle);
+            const nextIndex = (currentIndex + 1) % mapStyles.length;
+            currentMapStyle = mapStyles[nextIndex];
+            
+            const mapTypeIds = {
+                'terrain': google.maps.MapTypeId.TERRAIN,
+                'satellite': google.maps.MapTypeId.SATELLITE,
+                'hybrid': google.maps.MapTypeId.HYBRID,
+                'roadmap': google.maps.MapTypeId.ROADMAP
+            };
+            
+            map.setMapTypeId(mapTypeIds[currentMapStyle]);
+        }
+
+        function fitToMarkers() {
+            if (markers.length === 0) return;
+            
+            const bounds = new google.maps.LatLngBounds();
+            markers.forEach(marker => {
+                bounds.extend(marker.getPosition());
+            });
+            map.fitBounds(bounds);
+            
+            // Prevent too much zoom for single marker
+            google.maps.event.addListenerOnce(map, 'bounds_changed', () => {
+                if (markers.length === 1 && map.getZoom() > 12) {
+                    map.setZoom(12);
+                }
+            });
+        }
+
+        function showAnalysisDetails(analysisId) {
+            // Fetch detailed analysis data
+            fetch(`/api/analysis/${analysisId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayAnalysisModal(data.analysis);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching analysis details:', error);
+                    alert('Failed to load analysis details');
+                });
+        }
+
+        function displayAnalysisModal(analysis) {
+            const modalBody = document.getElementById('modalBody');
+            const analysisData = typeof analysis.analysis_data === 'string' 
+                ? JSON.parse(analysis.analysis_data) 
+                : analysis.analysis_data;
+
+            modalBody.innerHTML = `
+                <div class="modal-analysis">
+                    <div class="modal-location">
+                        <h4><i class="fas fa-map-marker-alt"></i> ${analysis.location_name}</h4>
+                        <p class="coordinates">${analysis.latitude.toFixed(4)}, ${analysis.longitude.toFixed(4)}</p>
+                        <p class="date"><i class="fas fa-calendar"></i> ${new Date(analysis.created_at).toLocaleDateString()}</p>
+                    </div>
+
+                    <div class="modal-crop">
+                        <div class="crop-recommendation">
+                            <i class="fas fa-seedling"></i>
+                            <span class="crop-name">${analysis.primary_crop}</span>
+                            <span class="confidence-badge confidence-${analysis.confidence > 70 ? 'high' : analysis.confidence > 40 ? 'medium' : 'low'}">
+                                ${analysis.confidence}% confidence
+                            </span>
+                        </div>
+                    </div>
+
+                    ${analysisData && analysisData.alternative_crops ? `
+                        <div class="modal-alternatives">
+                            <h5>Alternative Crops:</h5>
+                            <div class="alternatives-list">
+                                ${analysisData.alternative_crops.map(alt => 
+                                    `<span class="alt-crop">${alt.name} (${alt.confidence}%)</span>`
+                                ).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    ${analysisData && analysisData.soil_analysis ? `
+                        <div class="modal-analysis-grid">
+                            <div class="modal-section">
+                                <h5><i class="fas fa-mountain"></i> Soil Analysis</h5>
+                                <div class="analysis-metrics">
+                                    <div class="metric">pH: ${analysisData.soil_analysis.ph}</div>
+                                    <div class="metric">Sand: ${analysisData.soil_analysis.sand_percent}%</div>
+                                    <div class="metric">Silt: ${analysisData.soil_analysis.silt_percent}%</div>
+                                    <div class="metric">Clay: ${analysisData.soil_analysis.clay_percent}%</div>
+                                </div>
+                            </div>
+
+                            <div class="modal-section">
+                                <h5><i class="fas fa-cloud-sun"></i> Climate Data</h5>
+                                <div class="analysis-metrics">
+                                    <div class="metric">Temp: ${analysisData.climate_data.temperature_celsius}°C</div>
+                                    <div class="metric">Rainfall: ${analysisData.climate_data.annual_rainfall_mm}mm</div>
+                                    <div class="metric">Humidity: ${analysisData.climate_data.humidity_percent}%</div>
+                                </div>
+                            </div>
+
+                            <div class="modal-section">
+                                <h5><i class="fas fa-flask"></i> Nutrients</h5>
+                                <div class="analysis-metrics">
+                                    <div class="metric">N: ${analysisData.nutrient_estimates.nitrogen_kg_ha} kg/ha</div>
+                                    <div class="metric">P: ${analysisData.nutrient_estimates.phosphorus_kg_ha} kg/ha</div>
+                                    <div class="metric">K: ${analysisData.nutrient_estimates.potassium_kg_ha} kg/ha</div>
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+
+            document.getElementById('analysisModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('analysisModal').classList.add('hidden');
+        }
+
+        function toggleHistoryView() {
+            // Toggle between compact and detailed view
+            const timeline = document.querySelector('.analysis-timeline');
+            timeline.classList.toggle('detailed-view');
+        }
+
+        function exportData() {
+            // Export analysis data as JSON
+            const data = {
+                user: '{{ user.username }}',
+                export_date: new Date().toISOString(),
+                total_analyses: {{ stats.total_analyses }},
+                locations: analysisLocations
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], 
+                { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `soil_analysis_export_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('click', (e) => {
+            const modal = document.getElementById('analysisModal');
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+
+        // Responsive map resize
+        window.addEventListener('resize', () => {
+            if (map) {
+                google.maps.event.trigger(map, 'resize');
+            }
+        });
+    </script>
+</body>
+</html>

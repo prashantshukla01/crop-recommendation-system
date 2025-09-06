@@ -3,18 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crop Recommendation System</title>
+    <title>🌱 Smart Soil Analysis & Crop Recommendation</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
+    <!-- Navigation -->
+    <nav class="main-nav">
+        <div class="nav-brand">
+            <i class="fas fa-seedling"></i>
+            <span>Soil Analysis Pro</span>
+        </div>
+        <div class="nav-links">
+            <a href="/" class="nav-link active">
+                <i class="fas fa-home"></i> Home
+            </a>
+            <a href="/dashboard" class="nav-link">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+            <a href="/profile" class="nav-link">
+                <i class="fas fa-user"></i> Profile
+            </a>
+        </div>
+    </nav>
+
     <div class="container">
-        <h1>🌱 Smart Crop Recommendation System</h1>
-        <p>Enter your location to get personalized crop recommendations based on local climate and soil conditions</p>
+        <header>
+            <h1><i class="fas fa-seedling"></i> Smart Soil Analysis & Crop Recommendation</h1>
+            <p>Get personalized crop recommendations based on real-time climate and soil analysis</p>
+        </header>
 
         <div class="input-section">
-            <input type="text" id="location" placeholder="Enter city, state, or coordinates..." />
-            <button onclick="getRecommendation()">Get Recommendation</button>
-            <button onclick="getCurrentLocation()">Use Current Location</button>
+            <div class="input-group">
+                <i class="fas fa-map-marker-alt"></i>
+                <input type="text" id="location" placeholder="Enter city, country (e.g., Delhi, India)" />
+            </div>
+            <div class="button-group">
+                <button onclick="getRecommendation()" class="primary-btn">
+                    <i class="fas fa-search"></i> Analyze Soil
+                </button>
+                <button onclick="getCurrentLocation()" class="secondary-btn">
+                    <i class="fas fa-location-crosshairs"></i> Use GPS Location
+                </button>
+            </div>
         </div>
 
         <div id="loading" class="hidden">
@@ -23,34 +54,97 @@
         </div>
 
         <div id="result" class="hidden">
-            <h2>Recommendation for <span id="result-location"></span></h2>
-
-            <div class="result-card">
-                <h3>🌾 Recommended Crop: <span id="crop-name"></span></h3>
-                <p>Confidence: <span id="confidence"></span></p>
+            <div class="results-header">
+                <h2><i class="fas fa-map-marker-alt"></i> Analysis for <span id="result-location"></span></h2>
             </div>
 
-            <div class="data-section">
-                <div class="data-card">
-                    <h4>🌤️ Weather Conditions</h4>
-                    <p>Temperature: <span id="weather-temp"></span></p>
-                    <p>Rainfall: <span id="weather-rain"></span></p>
-                    <p>Humidity: <span id="weather-humidity"></span></p>
+            <div class="primary-recommendation">
+                <div class="crop-card">
+                    <div class="crop-icon">
+                        <i class="fas fa-leaf"></i>
+                    </div>
+                    <div class="crop-details">
+                        <h3>Primary Recommendation</h3>
+                        <div class="crop-name" id="crop-name"></div>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" id="confidence-fill"></div>
+                            <span class="confidence-text">Confidence: <span id="confidence"></span>%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="alternatives" class="alternatives-section">
+                <h3><i class="fas fa-list"></i> Alternative Crops</h3>
+                <div id="alternative-crops"></div>
+            </div>
+
+            <div class="analysis-grid">
+                <div class="analysis-card climate">
+                    <h4><i class="fas fa-cloud-sun"></i> Climate Data</h4>
+                    <div class="metric">
+                        <span class="metric-icon"><i class="fas fa-thermometer-half"></i></span>
+                        <span class="metric-label">Temperature:</span>
+                        <span class="metric-value" id="weather-temp"></span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-icon"><i class="fas fa-cloud-rain"></i></span>
+                        <span class="metric-label">Annual Rainfall:</span>
+                        <span class="metric-value" id="weather-rain"></span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-icon"><i class="fas fa-tint"></i></span>
+                        <span class="metric-label">Humidity:</span>
+                        <span class="metric-value" id="weather-humidity"></span>
+                    </div>
                 </div>
 
-                <div class="data-card">
-                    <h4>🌱 Soil Analysis</h4>
-                    <p>pH: <span id="soil-ph"></span></p>
-                    <p>Sand: <span id="soil-sand"></span>%</p>
-                    <p>Silt: <span id="soil-silt"></span>%</p>
-                    <p>Clay: <span id="soil-clay"></span>%</p>
+                <div class="analysis-card soil">
+                    <h4><i class="fas fa-mountain"></i> Soil Composition</h4>
+                    <div class="metric">
+                        <span class="metric-icon"><i class="fas fa-vial"></i></span>
+                        <span class="metric-label">pH Level:</span>
+                        <span class="metric-value" id="soil-ph"></span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-icon"><i class="fas fa-circle"></i></span>
+                        <span class="metric-label">Sand:</span>
+                        <span class="metric-value" id="soil-sand"></span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-icon"><i class="fas fa-circle"></i></span>
+                        <span class="metric-label">Silt:</span>
+                        <span class="metric-value" id="soil-silt"></span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-icon"><i class="fas fa-circle"></i></span>
+                        <span class="metric-label">Clay:</span>
+                        <span class="metric-value" id="soil-clay"></span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-icon"><i class="fas fa-seedling"></i></span>
+                        <span class="metric-label">Organic Carbon:</span>
+                        <span class="metric-value" id="organic-carbon"></span>
+                    </div>
                 </div>
 
-                <div class="data-card">
-                    <h4>🧪 Predicted Soil Nutrients</h4>
-                    <p>Nitrogen (N): <span id="npk-n"></span></p>
-                    <p>Phosphorus (P): <span id="npk-p"></span></p>
-                    <p>Potassium (K): <span id="npk-k"></span></p>
+                <div class="analysis-card nutrients">
+                    <h4><i class="fas fa-flask"></i> Nutrient Estimates</h4>
+                    <div class="metric">
+                        <span class="metric-icon"><i class="fas fa-atom"></i></span>
+                        <span class="metric-label">Nitrogen (N):</span>
+                        <span class="metric-value" id="npk-n"></span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-icon"><i class="fas fa-atom"></i></span>
+                        <span class="metric-label">Phosphorus (P):</span>
+                        <span class="metric-value" id="npk-p"></span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-icon"><i class="fas fa-atom"></i></span>
+                        <span class="metric-label">Potassium (K):</span>
+                        <span class="metric-value" id="npk-k"></span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -96,20 +190,20 @@
             error.classList.add('hidden');
 
             try {
-                const response = await fetch('/predict', {
+                const response = await fetch('/analyze-soil', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Content-Type': 'application/json',
                     },
-                    body: `location=${encodeURIComponent(location)}`
+                    body: JSON.stringify({ location: location })
                 });
 
                 const data = await response.json();
 
-                if (data.error) {
-                    showError(data.error);
-                } else {
+                if (data.success) {
                     displayResult(data);
+                } else {
+                    showError(data.error || 'Analysis failed');
                 }
 
             } catch (err) {
@@ -120,25 +214,47 @@
         }
 
         function displayResult(data) {
+            const analysis = data.analysis;
+            
+            // Location and primary recommendation
             document.getElementById('result-location').textContent = data.location;
-            document.getElementById('crop-name').textContent = data.recommended_crop;
-            document.getElementById('confidence').textContent = data.confidence;
+            document.getElementById('crop-name').textContent = analysis.primary_recommendation.crop;
+            
+            // Confidence with visual bar
+            const confidence = analysis.primary_recommendation.confidence;
+            document.getElementById('confidence').textContent = confidence;
+            const confidenceFill = document.getElementById('confidence-fill');
+            confidenceFill.style.width = confidence + '%';
+            
+            // Alternative crops
+            const alternativesContainer = document.getElementById('alternative-crops');
+            alternativesContainer.innerHTML = '';
+            analysis.alternative_crops.forEach(alt => {
+                const altDiv = document.createElement('div');
+                altDiv.className = 'alternative-crop';
+                altDiv.innerHTML = `
+                    <span class="alt-crop-name">${alt.name}</span>
+                    <span class="alt-confidence">${alt.confidence}%</span>
+                `;
+                alternativesContainer.appendChild(altDiv);
+            });
 
-            // Weather data
-            document.getElementById('weather-temp').textContent = data.weather_data.temperature;
-            document.getElementById('weather-rain').textContent = data.weather_data.rainfall;
-            document.getElementById('weather-humidity').textContent = data.weather_data.humidity;
+            // Climate data
+            document.getElementById('weather-temp').textContent = analysis.climate_data.temperature_celsius + '°C';
+            document.getElementById('weather-rain').textContent = analysis.climate_data.annual_rainfall_mm + ' mm';
+            document.getElementById('weather-humidity').textContent = analysis.climate_data.humidity_percent + '%';
 
             // Soil data
-            document.getElementById('soil-ph').textContent = data.soil_data.ph || 'N/A';
-            document.getElementById('soil-sand').textContent = data.soil_data.sand || 'N/A';
-            document.getElementById('soil-silt').textContent = data.soil_data.silt || 'N/A';
-            document.getElementById('soil-clay').textContent = data.soil_data.clay || 'N/A';
+            document.getElementById('soil-ph').textContent = analysis.soil_analysis.ph;
+            document.getElementById('soil-sand').textContent = analysis.soil_analysis.sand_percent + '%';
+            document.getElementById('soil-silt').textContent = analysis.soil_analysis.silt_percent + '%';
+            document.getElementById('soil-clay').textContent = analysis.soil_analysis.clay_percent + '%';
+            document.getElementById('organic-carbon').textContent = analysis.soil_analysis.organic_carbon + '%';
 
             // NPK data
-            document.getElementById('npk-n').textContent = data.predicted_npk.N;
-            document.getElementById('npk-p').textContent = data.predicted_npk.P;
-            document.getElementById('npk-k').textContent = data.predicted_npk.K;
+            document.getElementById('npk-n').textContent = analysis.nutrient_estimates.nitrogen_kg_ha + ' kg/ha';
+            document.getElementById('npk-p').textContent = analysis.nutrient_estimates.phosphorus_kg_ha + ' kg/ha';
+            document.getElementById('npk-k').textContent = analysis.nutrient_estimates.potassium_kg_ha + ' kg/ha';
 
             document.getElementById('result').classList.remove('hidden');
         }
